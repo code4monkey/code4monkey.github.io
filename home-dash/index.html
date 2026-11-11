@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex,nofollow">
+<meta name="referrer" content="no-referrer">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'self'; base-uri 'none'; form-action 'none'; object-src 'none'">
+<meta name="theme-color" content="#0f172a" media="(prefers-color-scheme: dark)">
+<meta name="theme-color" content="#f8fafc" media="(prefers-color-scheme: light)">
+<title>Dashboard</title>
+<link rel="stylesheet" href="uPlot.min.css">
+<link rel="stylesheet" href="app.css">
+</head>
+<body>
+<div id="login" class="login">
+  <form id="loginForm" class="card loginbox" autocomplete="on">
+    <h1>Dashboard</h1>
+    <p class="cap">Enter the password to unlock.</p>
+    <input type="text" name="username" value="dashboard" autocomplete="username" hidden>
+    <input id="pw" type="password" autocomplete="current-password" placeholder="Password" required autofocus>
+    <button class="btn primary" id="unlockBtn" type="submit">Unlock</button>
+    <div class="cap" id="loginMsg" aria-live="polite"></div>
+  </form>
+</div>
+<div id="shell" hidden>
+<header class="top">
+  <div>
+    <h1 id="title">Home Sensor Dashboard</h1>
+    <div class="sub" id="liveline"><span class="dot"></span> Loading…</div>
+  </div>
+  <div class="actions"><button class="btn" id="refreshBtn" title="Check for new data">Refresh</button><button class="btn" id="lockBtn" title="Lock and forget the key on this tab">Lock</button></div>
+</header>
+<main id="app">
+  <section class="metrics" id="metrics"></section>
+  <div id="callouts"></div>
+  <div id="home">
+    <section class="card">
+      <div class="card-h"><h2>Now</h2><span class="cap" id="nowCap"></span></div>
+      <div class="tiles" id="tiles"></div>
+    </section>
+    <section class="card">
+      <div class="card-h"><h2>Compare rooms</h2><div class="actions"><a class="btn" id="dlCompare" href="#">Download CSV</a></div></div>
+      <div class="controls" data-for="compare"></div>
+      <div class="chips" id="presets">
+        <button class="btn sm" data-preset="live">Main rooms</button>
+        <button class="btn sm" data-preset="indoor">All indoor</button>
+        <button class="btn sm" data-preset="util" id="utilPreset">Unconditioned spaces</button>
+        <button class="btn sm" data-preset="all">All rooms</button>
+      </div>
+      <div class="chips" id="roomToggles"></div>
+      <div class="readout" id="ro-compare"></div>
+      <div class="chart" id="ch-compare"></div>
+      <div class="legend-note" id="note-compare"></div>
+    </section>
+    <section class="card">
+      <div class="card-h"><h2 id="ioTitle">Indoor vs unconditioned spaces</h2><span class="cap">Indoor average uses whichever indoor sensors reported in each interval.</span></div>
+      <div class="readout" id="ro-io"></div>
+      <div class="chart" id="ch-io"></div>
+    </section>
+    <section class="card">
+      <div class="card-h"><h2>Daily high / low</h2>
+        <div class="actions"><select id="dailyRoom" class="sel"></select></div></div>
+      <div class="cap" id="dailyCap"></div>
+      <div class="tablewrap"><table class="tbl" id="dailyTbl"></table></div>
+    </section>
+    <section class="card">
+      <div class="card-h"><h2>Heating</h2><span class="cap" id="heatCap"></span></div>
+      <div class="zones" id="zones"></div>
+      <div class="bars" id="heatBars"></div>
+      <h3>Both floors heating at once</h3>
+      <div class="tablewrap"><table class="tbl" id="ovlTbl"></table></div>
+      <h3>Biggest temperature drops after heat starts</h3>
+      <div class="tablewrap"><table class="tbl" id="dropTbl"></table></div>
+    </section>
+    <section class="card">
+      <div class="card-h"><h2>Data gaps</h2><span class="cap">Silences of 2 hours or more in the last 30 days.</span></div>
+      <div class="tablewrap"><table class="tbl" id="gapTbl"></table></div>
+    </section>
+  </div>
+  <div id="detail" hidden>
+    <section class="card">
+      <div class="card-h"><h2 id="dTitle"></h2><div class="actions"><a class="btn" id="dlDetail" href="#">Download CSV</a><button class="btn" id="backBtn">Back</button></div></div>
+      <div class="dstats" id="dStats"></div>
+      <div class="controls" data-for="detail"></div>
+      <div class="readout" id="ro-detail"></div>
+      <div id="dCharts"></div>
+    </section>
+    <section class="card">
+      <div class="card-h"><h2>Daily high / low</h2></div>
+      <div class="tablewrap"><table class="tbl" id="dDailyTbl"></table></div>
+    </section>
+    <section class="card">
+      <div class="card-h"><h2>Biggest drops after heat starts</h2></div>
+      <div class="tablewrap"><table class="tbl" id="dDropTbl"></table></div>
+    </section>
+  </div>
+  <footer class="foot" id="foot"></footer>
+</main>
+</div>
+<script src="uPlot.iife.min.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
