@@ -1,0 +1,52 @@
+# Off-box dead-man's switch for Jeffrey's home monitoring box.
+# The box pushes home-dash/heartbeat.json (UTC timestamp + component status words only, nothing sensitive)
+# at least hourly, 24 h a day. If it goes stale, this scheduled run fails and GitHub emails the repo owner.
+name: Home dash watchdog
+on:
+  schedule:
+    - cron: "17 * * * *"   # hourly at :17 UTC (GitHub may start scheduled runs a few minutes late)
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: home-dash-watchdog
+  cancel-in-progress: false
+jobs:
+  heartbeat:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Fetch heartbeat file only
+        uses: actions/checkout@v4
+        with:
+          sparse-checkout: home-dash/heartbeat.json
+          sparse-checkout-cone-mode: false
+          fetch-depth: 1
+      - name: Check heartbeat age and alert-routine status
+        env:
+          MAX_AGE_MIN: "150"
+        run: |
+          python3 - <<'PY'
+          import json, os, sys
+          from datetime import datetime, timezone
+          limit = float(os.environ["MAX_AGE_MIN"])
+          summary = open(os.environ["GITHUB_STEP_SUMMARY"], "a")
+          try:
+              hb = json.load(open("home-dash/heartbeat.json"))
+              ts = datetime.fromisoformat(hb["ts"].replace("Z", "+00:00"))
+          except Exception as e:
+              msg = f"Heartbeat file missing or unreadable ({type(e).__name__})."
+              print(f"::error::{msg}"); summary.write(msg + "\n"); sys.exit(1)
+          age = (datetime.now(timezone.utc) - ts).total_seconds() / 60
+          comps = hb.get("components", {})
+          line = f"Heartbeat {age:.0f} min old (limit {limit:.0f}); components: {comps}"
+          print(line); summary.write(line + "\n")
+          problems = []
+          if age > limit:
+              problems.append(f"the monitoring box has not checked in for {age/60:.1f} h (box asleep/down or dashboard updater stopped)")
+          if comps.get("sensor_check") != "ok":
+              problems.append("the 'Home sensor alerts' routine has not run for over an hour, so no on-box alerts can reach Jeffrey")
+          if problems:
+              msg = "Home monitoring watchdog: " + "; ".join(problems) + "."
+              print(f"::error::{msg}"); summary.write(msg + "\n"); sys.exit(1)
+          PY
