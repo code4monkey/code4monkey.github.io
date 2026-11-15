@@ -8,7 +8,7 @@
   var UTIL = ["r7", "r6"];
   var PALETTE = { r0: "#2563eb", r1: "#ca8a04", r2: "#ea580c", r3: "#16a34a", r4: "#7c3aed", r5: "#0891b2", r6: "#db2777", r7: "#6b7280", indoor: "#0f766e" };
   var COMFORT = { temp: [68, 74], hum: [30, 60] };
-  var RANGES = [["24h", "24 hours"], ["3d", "3 days"], ["7d", "7 days"], ["30d", "30 days"], ["all", "All"], ["year", "Past year"], ["custom", "Custom"]];
+  var RANGES = [["24h", "24 hours"], ["3d", "3 days"], ["7d", "7 days"], ["30d", "30 days"], ["all", "All"], ["year", "Past year"], ["2y", "2 years"], ["custom", "Custom"]];
   var METRICS = [["temp", "Temperature"], ["hum", "Humidity"], ["dew", "Dewpoint"], ["vpd", "VPD"]];
   var REFRESH_MS = 5 * 60 * 1000;
   var SHORT_MAX = 31 * 86400 + 3600; // ranges up to this use per-day minute files; longer ones use 6-hour points
@@ -77,6 +77,7 @@
     if (r === "7d") return [now - 7 * 86400, now];
     if (r === "30d") return [now - 30 * 86400, now];
     if (r === "year") return [now - 365 * 86400, now];
+    if (r === "2y") return [now - 730 * 86400, now];
     if (r === "all") return [S.summary && S.summary.first ? S.summary.first : now - 400 * 86400, now];
     var a = etMidnight(S.custom.from), b = etMidnight(nextDay(S.custom.to));
     if (b <= a) b = a + 86400; return [a, Math.min(b, now + 60)];
