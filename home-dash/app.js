@@ -407,18 +407,26 @@
     ];
     $("metrics").innerHTML = M.map(function (x) { return '<div class="metric"><div class="v">' + esc(x[0]) + '</div><div class="l">' + esc(x[1]) + '</div><div class="d">' + esc(x[2]) + "</div></div>"; }).join("");
     var warn = s.rooms.filter(function (r) { return r.status !== "ok"; });
-    var co = '<div class="callout info"><b>Snapshot data.</b>This page is republished from the saved sensor readings about every 20 minutes between 6 AM and 11 PM Eastern (latest reading ' + esc(fmt(latest)) + '); it checks for a new copy every 5 minutes while open. Comfort shading is 68–74°F and 30–60% RH. Dewpoint and VPD are computed from temperature and humidity. Orange shading = 1st floor heating, blue = 2nd floor, red = both at once. The hover readout always shows unsmoothed values. Times are Eastern.</div>';
+    var lowBatt = s.rooms.filter(function (r) { return r.batt != null && r.batt < 2.6; });
+    var co = '<div class="callout info"><b>Snapshot data.</b>This page is republished from the saved sensor readings about every 20 minutes between 6 AM and 11 PM Eastern (latest reading ' + esc(fmt(latest)) + '); it checks for a new copy every 5 minutes while open. Comfort shading is 68–74°F and 30–60% RH. Dewpoint and VPD are computed from temperature and humidity. Orange shading = 1st floor heating, blue = 2nd floor, red = both at once. Battery and signal are a once-a-day reading. The hover readout always shows unsmoothed values. Times are Eastern.</div>';
     if (warn.length) co += '<div class="callout warning"><b>Sensors not reporting.</b>' + warn.map(function (r) { return esc(r.n) + (r.ts ? " last reported " + esc(fmt(r.ts)) + " (" + esc(ago(r.age_s)) + ")" : " has no data"); }).join("; ") + ".</div>";
+    if (lowBatt.length) co += '<div class="callout warning"><b>Low battery.</b>' + lowBatt.map(function (r) { return esc(r.n) + " " + r.batt.toFixed(2) + " V (under 2.6 V)"; }).join("; ") + ".</div>";
     $("callouts").innerHTML = co;
-    $("nowCap").textContent = "Tap a room for a closer look. Stale after 1 hour without a reading; offline after 12 hours.";
+    $("nowCap").textContent = "Tap a room for a closer look. Stale after 1 hour without a reading; offline after 12 hours. Battery under 2.6 V is highlighted in yellow.";
     $("tiles").innerHTML = s.rooms.map(function (r) {
+      var battLow = r.batt != null && r.batt < 2.6;
       var badge = r.status === "stale" ? '<span class="badge stale">Stale</span>' : r.status === "offline" ? '<span class="badge offline">Offline</span>' : r.status === "nodata" ? '<span class="badge nodata">No data</span>' : "";
+      if (battLow) badge += '<span class="badge batt">Low battery</span>';
       var out = [];
       if (r.status === "ok" && r.t != null && (r.t < 68 || r.t > 74) && INDOOR.indexOf(r.k) >= 0) out.push("outside 68–74°F");
       if (r.status === "ok" && r.h != null && (r.h < 30 || r.h > 60) && INDOOR.indexOf(r.k) >= 0) out.push("outside 30–60% RH");
-      return '<div class="tile" role="button" tabindex="0" data-room="' + r.k + '"><div class="hd"><span class="nm"><span class="sw" style="background:' + PALETTE[r.k] + '"></span>' + esc(r.n) + "</span>" + badge + "</div>" +
+      var health = (r.batt != null || r.rssi != null)
+        ? '<div class="s2' + (battLow ? " batt-low-v" : "") + '">' + (r.batt != null ? r.batt.toFixed(2) + " V" : "—") + (r.rssi != null ? " · " + r.rssi + " dBm" : "") + "</div>"
+        : "";
+      return '<div class="tile' + (battLow ? " batt-low" : "") + '" role="button" tabindex="0" data-room="' + r.k + '"><div class="hd"><span class="nm"><span class="sw" style="background:' + PALETTE[r.k] + '"></span>' + esc(r.n) + "</span>" + badge + "</div>" +
         '<div class="big">' + (r.t != null ? r.t.toFixed(1) + "°F" : "—") + "</div>" +
         '<div class="s1">' + (r.h != null ? r.h.toFixed(0) + "% RH" : "—") + (r.dew != null ? " · dew " + r.dew.toFixed(0) + "°" : "") + (r.vpd != null ? " · " + r.vpd.toFixed(2) + " kPa" : "") + "</div>" +
+        health +
         '<div class="s2">' + (r.ts ? esc(fmt(r.ts, "time")) + " · " + esc(ago(r.age_s)) : "") + "</div>" +
         (r.t24 ? '<div class="s2">24h: ' + r.t24[0].toFixed(1) + "–" + r.t24[1].toFixed(1) + "°F" + (r.h24 ? ", " + r.h24[0].toFixed(0) + "–" + r.h24[1].toFixed(0) + "%" : "") + "</div>" : "") +
         (out.length ? '<div class="s2" style="color:var(--warn)">' + esc(out.join(" · ")) + "</div>" : "") + "</div>";
@@ -503,7 +511,7 @@
   function renderDetailStats() {
     var k = view(); if (k === "home" || !S.summary) return;
     var r = S.summary.rooms.filter(function (x) { return x.k === k; })[0]; if (!r) return;
-    $("dTitle").innerHTML = '<span class="sw" style="background:' + PALETTE[k] + ';width:12px;height:12px;margin-right:8px"></span>' + esc(r.n) + (r.status === "stale" ? ' <span class="badge stale">Stale</span>' : r.status === "offline" ? ' <span class="badge offline">Offline</span>' : "");
+    $("dTitle").innerHTML = '<span class="sw" style="background:' + PALETTE[k] + ';width:12px;height:12px;margin-right:8px"></span>' + esc(r.n) + (r.status === "stale" ? ' <span class="badge stale">Stale</span>' : r.status === "offline" ? ' <span class="badge offline">Offline</span>' : "") + (r.batt != null && r.batt < 2.6 ? ' <span class="badge batt">Low battery</span>' : "") + (r.batt != null || r.rssi != null ? ' <span class="cap' + (r.batt != null && r.batt < 2.6 ? " batt-low-v" : "") + '">' + (r.batt != null ? r.batt.toFixed(2) + " V" : "") + (r.batt != null && r.rssi != null ? " · " : "") + (r.rssi != null ? r.rssi + " dBm" : "") + "</span>" : "");
     var st = [
       [r.t != null ? r.t.toFixed(1) + "°F" : "—", "Temperature", r.ts ? fmt(r.ts, "time") + " · " + ago(r.age_s) : ""],
       [r.h != null ? r.h.toFixed(1) + "%" : "—", "Humidity", r.h24 ? "24h " + r.h24[0].toFixed(0) + "–" + r.h24[1].toFixed(0) + "%" : ""],
