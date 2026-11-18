@@ -1,1 +1,1 @@
-{"schema": 1, "ts": "2026-11-18T23:22:15Z", "components": {"nest_listener": "stale", "dashboard": "ok", "sensor_check": "ok"}}
+{"schema": 1, "ts": "2026-11-18T23:50:02Z", "components": {"nest_listener": "ok", "dashboard": "ok", "sensor_check": "ok"}}
